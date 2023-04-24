@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generate Vaccine QR Code</title>
+    <link rel="stylesheet" href="3003Style3.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    
+</head>
+<body>  
+    <div id="qrcode"></div>
+    <h1 id="randomNumber"></h1>
+
+    <script>
+        // Generate a QR code with a random number
+        const randomNumber = Math.floor(100000000 + Math.random() * 900000000);
+        const url = "https://directingto-site-of-verification.vercel.app?number=" + randomNumber;
+        new QRCode(document.getElementById("qrcode"), url);
+        document.getElementById("randomNumber").innerText = randomNumber;
+    </script>
+</body>
+</html>

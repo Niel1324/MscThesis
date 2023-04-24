@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mint Profile Picture NFT</title>
+  <script src="https://cdn.jsdelivr.net/npm/web3@1.6.1/dist/web3.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/ipfs-http-client@48.2.2/dist/index.min.js"></script>
+  <style>
+    .success-icon {
+      color: green;
+      font-size: 24px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <h1>Mint Profile Picture NFT</h1>
+  <input type="file" id="profilePicture" accept="image/*">
+  <button onclick="mintNFT()">Mint NFT</button>
+  <span id="successIcon" class="success-icon">&#10004;</span>
+  <div id="result"></div>
+  
+  <script>
+    const contractABI = [
+    {
+      "inputs": [],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "owner",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "approved",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "tokenId",
+          "type": "uint256"
+        }
+      ],
+      "name": "Approval",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "owner",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "operator",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "bool",
+          "name": "approved",
+          "type": "bool"
+        }
+      ],
+      "name": "ApprovalForAll",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "message",
+          "type": "string"
+        }
+      ],
+      "name": "Log",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "from",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "to",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "tokenId",
+          "type": "uint256"
+        }
+      ],
+      "name": "Transfer",
+      "type": "event"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "to",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "tokenId",
+          "type": "uint256"
+        }
+      ],
+      "name": "approve",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "owner",
+          "type": "address"
+        }
+      ],
+      "name": "balanceOf",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "tokenId",
+          "type": "uint256"
+        }
+      ],
+      "name": "burnNFT",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "tokenId",
+          "type": "uint256"
+        }
+      ],
+      "name": "getApproved",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "owner",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "operator",
+          "type": "address"
+        }
+      ],
+      "name": "isApprovedForAll",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "recipient",
+          "type": "address"
+        },
+        {
+          "internalType": "string",
+          "name": "tokenURI",
+          "type": "string"
+        }
+      ],
+      "name": "mintNFT",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "name",
+      "outputs": [
+        {
+          "internalType": "string",
+          "name": "",
+          "type": "string"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "tokenId",
+          "type": "uint256"
+        }
+      ],
+      "name": "ownerOf",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "from",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "to",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "tokenId",
+          "type": "uint256"
+        }
+      ],
+      "name": "safeTransferFrom",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "from",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "to",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "tokenId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "bytes",
+          "name": "data",
+          "type": "bytes"
+        }
+      ],
+      "name": "safeTransferFrom",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "operator",
+          "type": "address"
+        },
+        {
+          "internalType": "bool",
+          "name": "approved",
+          "type": "bool"
+        }
+      ],
+      "name": "setApprovalForAll",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes4",
+          "name": "interfaceId",
+          "type": "bytes4"
+        }
+      ],
+      "name": "supportsInterface",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "symbol",
+      "outputs": [
+        {
+          "internalType": "string",
+          "name": "",
+          "type": "string"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "tokenId",
+          "type": "uint256"
+        }
+      ],
+      "name": "tokenURI",
+      "outputs": [
+        {
+          "internalType": "string",
+          "name": "",
+          "type": "string"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "from",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "to",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "tokenId",
+          "type": "uint256"
+        }
+      ],
+      "name": "transferFrom",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ];
+    const contractAddress = '0xf384ECd435B6017167ACeb76643DF70C62c21B50';
+    async function mintNFT() {
+  // Check if Web3 is injected in the browser
+  if (typeof window.ethereum === 'undefined') {
+    alert('Please install MetaMask or another Web3 provider');
+    return;
+  }
+
+  // Initialize web3 instance with the current provider
+  const web3 = new Web3(window.ethereum);
+
+  // Request account access
+  const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+
+  // Generate a new Ethereum wallet
+  const newWallet = web3.eth.accounts.create();
+  const recipient = newWallet.address;
+
+  // Read profile picture file
+  const profilePicture = document.getElementById('profilePicture').files[0];
+  if (!profilePicture) {
+    alert('Please select a profile picture');
+    return;
+  }
+
+  // Initialize IPFS client
+  const projectId = '2NmIjR6CdOrgrYKV3X5tJaQvCvX';
+   const projectSecret = '0071a81af24d807c003b6375ac193b1b';
+   const authHeader = 'Basic ' + btoa(projectId + ':' + projectSecret);
+
+const ipfs = window.IpfsHttpClient({
+  host: 'ipfs.infura.io',
+  port: 5001,
+  protocol: 'https',
+  headers: {
+    authorization: authHeader
+  }
+});
+
+  // Convert the image to base64 format
+  const reader = new FileReader();
+  reader.readAsArrayBuffer(profilePicture);
+  reader.onload = async () => {
+    const buffer = await new Uint8Array(reader.result);
+
+    // Add the image to IPFS
+    const ipfsResult = await ipfs.add(buffer);
+
+    // Get the IPFS hash
+    const ipfsHash = ipfsResult.path;
+
+    // Instantiate the smart contract
+    const contract = new web3.eth.Contract(contractABI, contractAddress);
+
+    // Get the current gas price
+    const gasPrice = await web3.eth.getGasPrice();
+
+// Record start time
+const startTime = new Date().getTime();
+
+// Call the mintNFT function on the smart contract
+const tokenId  = await contract.methods
+  .mintNFT(recipient, ipfsHash)
+  .send({ from: accounts[0], gasLimit: 5000000, gasPrice });
+
+// Calculate the transaction cost in ETH and USD
+const gasUsed = tokenId .gasUsed;
+const transactionCostETH = web3.utils.fromWei((gasUsed * gasPrice).toString(), 'ether');
+const ethPrice = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd').then(res => res.json());
+const transactionCostUSD = (parseFloat(transactionCostETH) * ethPrice.ethereum.usd).toFixed(2);
+
+// Calculate the time it took for the NFT to mint
+const endTime = new Date().getTime();
+const totalTime = ((endTime - startTime) / 1000).toFixed(2);
+
+// Display the private key and minting completion message
+const resultDiv = document.getElementById('result');
+resultDiv.innerHTML = `
+  <p>Minting completed!</p>
+  <p>Private Key: ${newWallet.privateKey}</p>
+  <p>IPFS Hash: ${ipfsHash}</p>
+  <p>View on IPFS: <a href="https://ipfs.io/ipfs/${ipfsHash}" target="_blank">https://ipfs.io/ipfs/${ipfsHash}</a></p>
+  <p>Time taken: ${totalTime} seconds</p>
+  <p>Transaction cost: ${transactionCostETH} ETH (~$${transactionCostUSD})</p>
+`;
+
+// Show the green checkmark
+document.getElementById('successIcon').style.display = 'inline';
+}}
+</script>
+</body>
+</html>

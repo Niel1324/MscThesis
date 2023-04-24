@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Generate Vaccine QR Code</title>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+        <link rel="stylesheet" href="3003Style1.css">
+      </head>
+      
+<body>
+    <h1>Generate Vaccine QR Code</h1>
+    <form id="qrForm">
+        <label for="name">Name:</label>
+        <input type="text" id="name" required><br><br>
+        <label for="vaccineName">Vaccine Name:</label>
+        <input type="text" id="vaccineName" required><br><br>
+        <label for="serialNumber">Serial Number:</label>
+        <input type="text" id="serialNumber" required><br><br>
+        <button type="submit">Generate QR</button>
+    </form>
+    <canvas id="qrCode" style="display: none;"></canvas>
+
+    <script>
+document.getElementById('qrForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+
+    const name = encodeURIComponent(document.getElementById('name').value);
+    const vaccineName = encodeURIComponent(document.getElementById('vaccineName').value);
+    const serialNumber = encodeURIComponent(document.getElementById('serialNumber').value);
+    const startTime = new Date().getTime();
+    const url = `https://q-rscanner-for3.vercel.app/?name=${name}&vaccineName=${vaccineName}&serialNumber=${serialNumber}`;
+    const endTime = new Date().getTime();
+    const totalTime = ((endTime - startTime) / 1000).toFixed(2);
+    console.log(totalTime)
+    const qrCodeCanvas = document.getElementById('qrCode');
+    const qrCode = new QRious({
+        element: qrCodeCanvas,
+        value: url,
+        size: 200
+    });
+
+    qrCodeCanvas.style.display = 'block';
+});
+    </script>
+</body>
+</html>

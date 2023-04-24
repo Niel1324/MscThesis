@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Scanner and Profile Picture</title>
+    <link rel="stylesheet" href="3003Style4.css">
+    <script src="https://unpkg.com/@zxing/library@0.18.3/umd/index.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/web3@1.6.1/dist/web3.min.js"></script>
+    <style>
+        .random-number {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .vaccine {
+            margin-bottom: 10px;
+        }
+
+        img {
+            max-width: 150px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>QR Scanner and Profile Picture</h1>
+    <video id="video" width="300" height="200" style="border: 1px solid black"></video>
+    <button id="scanButton">Start Scanning</button>
+    <button id="stopButton" style="display:none;">Stop Scanning</button>
+    <div id="result"></div>
+
+    <script>
+        const { BrowserQRCodeReader } = ZXing;
+        const codeReader = new BrowserQRCodeReader();
+        const video = document.getElementById('video');
+        const resultElement = document.getElementById('result');
+        const scanButton = document.getElementById('scanButton');
+        const stopButton = document.getElementById('stopButton');
+
+        // Add your contract ABIs and addresses
+        const contractABI = [
+    {
+      "inputs": [],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "owner",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "approved",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "tokenId",
+          "type": "uint256"
+        }
+      ],
+      "name": "Approval",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "owner",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "operator",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "bool",
+          "name": "approved",
+          "type": "bool"
+        }
+      ],
+      "name": "ApprovalForAll",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "from",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "to",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "tokenId",
+          "type": "uint256"
+        }
+      ],
+      "name": "Transfer",
+      "type": "event"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "to",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "tokenId",
+          "type": "uint256"
+        }
+      ],
+      "name": "approve",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "owner",
+          "type": "address"
+        }
+      ],
+      "name": "balanceOf",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "tokenId",
+          "type": "uint256"
+        }
+      ],
+      "name": "burnNFT",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "tokenId",
+          "type": "uint256"
+        }
+      ],
+      "name": "getApproved",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "owner",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "operator",
+          "type": "address"
+        }
+      ],
+      "name": "isApprovedForAll",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "recipient",
+          "type": "address"
+        },
+        {
+          "internalType": "string",
+          "name": "tokenURI",
+          "type": "string"
+        }
+      ],
+      "name": "mintNFT",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "name",
+      "outputs": [
+        {
+          "internalType": "string",
+          "name": "",
+          "type": "string"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "tokenId",
+          "type": "uint256"
+        }
+      ],
+      "name": "ownerOf",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "from",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "to",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "tokenId",
+          "type": "uint256"
+        }
+      ],
+      "name": "safeTransferFrom",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "from",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "to",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "tokenId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "bytes",
+          "name": "data",
+          "type": "bytes"
+        }
+      ],
+      "name": "safeTransferFrom",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "operator",
+          "type": "address"
+        },
+        {
+          "internalType": "bool",
+          "name": "approved",
+          "type": "bool"
+        }
+      ],
+      "name": "setApprovalForAll",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes4",
+          "name": "interfaceId",
+          "type": "bytes4"
+        }
+      ],
+      "name": "supportsInterface",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "symbol",
+      "outputs": [
+        {
+          "internalType": "string",
+          "name": "",
+          "type": "string"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "tokenId",
+          "type": "uint256"
+        }
+      ],
+      "name": "tokenURI",
+      "outputs": [
+        {
+          "internalType": "string",
+          "name": "",
+          "type": "string"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "owner",
+          "type": "address"
+        }
+      ],
+      "name": "tokensOfOwner",
+      "outputs": [
+        {
+          "internalType": "uint256[]",
+          "name": "",
+          "type": "uint256[]"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "from",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "to",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "tokenId",
+          "type": "uint256"
+        }
+      ],
+      "name": "transferFrom",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ];
+    const contractAddress = '0xf384ECd435B6017167ACeb76643DF70C62c21B50';
+
+    async function displayVaccines(walletAddress, vaccines, randomNumber) {
+    if (!resultElement.querySelector('.random-number')) {
+        const randomNumberElement = document.createElement('div');
+        randomNumberElement.classList.add('random-number');
+        randomNumberElement.innerText = 'Random Number: ' + randomNumber;
+        resultElement.appendChild(randomNumberElement);
+    }
+    await displayProfilePicture(walletAddress, randomNumber)
+    for (const vaccine of vaccines) {
+        const vaccineElement = document.createElement('div');
+        vaccineElement.classList.add('vaccine');
+        vaccineElement.innerHTML = `
+            <strong>Vaccine:</strong> ${vaccine[0]}<br>
+            <strong>Date:</strong> ${vaccine[1]}<br>
+            <strong>Doctor Address:</strong> ${vaccine[2]}<br>
+            <strong>Doctor Name:</strong> ${vaccine[3]}
+        `;
+        resultElement.appendChild(vaccineElement);
+    }
+}
+
+        
+async function displayProfilePicture(walletAddress, randomNumber) {
+    if (typeof window.ethereum === 'undefined') {
+        alert('Please install MetaMask or another Web3 provider');
+        return;
+    }
+
+    const web3 = new Web3(window.ethereum);
+    const contract = new web3.eth.Contract(contractABI, contractAddress);
+
+    const tokenIdArray = await contract.methods.tokensOfOwner(walletAddress).call();
+
+    if (!tokenIdArray || tokenIdArray.length === 0) {
+        document.getElementById('result').innerHTML = '<p>No profile picture NFT found for this address.</p>';
+        return;
+    }
+
+    let resultHTML = '';
+
+    for (const tokenId of tokenIdArray) {
+      
+        const tokenURI = await contract.methods.tokenURI(tokenId).call();
+        const ipfsHash = tokenURI.replace('ipfs://', '');
+        const imageURL = `https://ipfs.io/ipfs/${ipfsHash}`;
+
+        resultHTML = `
+        <div class="random-number">Random Number: ${randomNumber}</div>
+          <p>ProfilePic:</p>
+          <img src="${imageURL}" alt="Profile Picture NFT">
+
+          <hr>
+        `;
+    }
+
+    document.getElementById('result').innerHTML = resultHTML;
+}
+
+        function startScanning() {
+    codeReader.decodeFromVideoDevice(undefined, video, (result, error) => {
+        if (result) {
+            codeReader.reset();
+            video.style.display = 'none'; // Add this line to hide the video element after scanning
+            const [walletAddress, vaccineData, randomNumber] = result.text.split('-----');
+            console.log(result.text)
+            const vaccines = JSON.parse(vaccineData);
+            displayVaccines(walletAddress, vaccines, randomNumber);
+            stopButton.style.display = 'none';
+            scanButton.style.display = '';
+        }
+    });
+}
+            
+            scanButton.addEventListener('click', () => {
+        startScanning();
+        scanButton.style.display = 'none';
+        stopButton.style.display = '';
+    });
+
+            stopButton.addEventListener('click', () => {
+        codeReader.reset();
+        stopButton.style.display = 'none';
+        scanButton.style.display = '';
+        resultElement.innerHTML = '';
+    });
+
+    
+</script>
+</body>
+</html>
