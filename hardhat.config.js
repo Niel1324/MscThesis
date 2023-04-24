@@ -5,7 +5,7 @@
 require('dotenv').config();
 require("@nomiclabs/hardhat-ethers");
 
-const { INFURA_PROJECT_ID, PRIVATE_KEY } = process.env;
+const {PRIVATE_KEY } = process.env;
 
 module.exports = {
   solidity: "0.8.1",
