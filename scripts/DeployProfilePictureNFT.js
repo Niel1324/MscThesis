@@ -20,7 +20,7 @@ async function main() {
     const startTime = Date.now();
     // Deploy the contract
     const ProfilePictureNFT = await ethers.getContractFactory('ProfilePictureNFT');
-    const profilePictureNFT = await ProfilePictureNFT.deploy({ gasLimit: 5000000 });
+    const profilePictureNFT = await ProfilePictureNFT.deploy({ gasPrice });
 
     // Wait for the contract to be mined
     const transactionReceipt = await profilePictureNFT.deployTransaction.wait();

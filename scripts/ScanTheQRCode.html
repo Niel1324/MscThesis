@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Check Vaccines</title>
+    <script src="https://cdn.ethers.io/lib/ethers-5.0.umd.min.js" type="text/javascript"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+</head>
+<body>
+    <h1 id="randomNumber"></h1>
+    <button onclick="getEncryptedData()">Get Encrypted Data</button>
+    <button onclick="decryptData()">Decrypt Data</button>
+    <pre id="vaccinesData"></pre>
+    <canvas id="qrCode" style="display: none;"></canvas>
+
+    <script>
+        // Replace this with the contract ABI
+        const contractAddress = '0x69d91f9C5E2AFBb3393D18C1c0F0840fcc703b3e';
+
+        const contractABI = [
+  {
+    "inputs": [],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "doctor",
+        "type": "address"
+      },
+      {
+        "internalType": "string",
+        "name": "name",
+        "type": "string"
+      }
+    ],
+    "name": "addAndVerifyDoctor",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "patient",
+        "type": "address"
+      },
+      {
+        "internalType": "string",
+        "name": "name",
+        "type": "string"
+      },
+      {
+        "internalType": "uint256",
+        "name": "date",
+        "type": "uint256"
+      }
+    ],
+    "name": "addVaccine",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "doctorNames",
+    "outputs": [
+      {
+        "internalType": "string",
+        "name": "",
+        "type": "string"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "patient",
+        "type": "address"
+      }
+    ],
+    "name": "getPatientVaccines",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "string",
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "internalType": "uint256",
+            "name": "date",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "doctor",
+            "type": "address"
+          },
+          {
+            "internalType": "string",
+            "name": "doctorName",
+            "type": "string"
+          }
+        ],
+        "internalType": "struct VaccineRegistry.Vaccine[]",
+        "name": "",
+        "type": "tuple[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "doctor",
+        "type": "address"
+      }
+    ],
+    "name": "isVerified",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "patientVaccines",
+    "outputs": [
+      {
+        "internalType": "string",
+        "name": "name",
+        "type": "string"
+      },
+      {
+        "internalType": "uint256",
+        "name": "date",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "doctor",
+        "type": "address"
+      },
+      {
+        "internalType": "string",
+        "name": "doctorName",
+        "type": "string"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "verifiedDoctors",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  }
+];
+
+        // Display the random number from the URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const randomNumber = urlParams.get("number");
+
+        document.getElementById("randomNumber").innerText = randomNumber;
+
+        let encryptedData;
+        let patientAddress;
+        async function connectMetamask() {
+            if (typeof ethereum !== 'undefined') {
+                try {
+                    await ethereum.request({ method: 'eth_requestAccounts' });
+                    const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
+                    patientAddress = accounts[0];
+                    return true;
+                } catch (error) {
+                    console.error("User rejected connection:", error);
+                    return false;
+                }
+            } else {
+                alert("Please install MetaMask");
+                return false;
+            }
+        }
+
+        async function getEncryptedData() {
+    if (await connectMetamask()) {
+        const provider = new ethers.providers.Web3Provider(ethereum);
+        const contract = new ethers.Contract(contractAddress, contractABI, provider);
+
+        try {
+            encryptedData = await contract.getPatientVaccines(patientAddress);
+
+            // Format the dates
+            const formattedData = encryptedData.map(item => {
+                const encryptedMessage = item[0];
+                const dateBigNumber = ethers.BigNumber.from(item[1]);
+                const dateTimestamp = dateBigNumber.toNumber();
+                const date = new Date(dateTimestamp).toLocaleDateString();
+                const doctorAddress = item[2];
+                const doctorName = item[3];
+
+                return [encryptedMessage, date, doctorAddress, doctorName];
+            });
+
+            document.getElementById("vaccinesData").innerText = JSON.stringify(formattedData, null, 2);
+        } catch (error) {
+            console.error("Error getting patient vaccines:", error);
+        }
+    }
+}
+
+
+        async function decryptData() {
+    if (encryptedData) {
+        try {
+            const decryptedData = [];
+            for (const encryptedItem of encryptedData) {
+                // Extract the encrypted message
+                const encryptedMessage = JSON.parse(encryptedItem[0]);
+                const decryptedItem = await ethereum.request({
+                    method: 'eth_decrypt',
+                    params: [encryptedMessage, ethereum.selectedAddress],
+                });
+                const dateBigNumber = ethers.BigNumber.from(encryptedItem[1]);
+                const dateTimestamp = dateBigNumber.toNumber() ;
+                const date = new Date(dateTimestamp).toLocaleDateString();
+                const doctorAddress = encryptedItem[2];
+                const doctorName = encryptedItem[3];
+                // Replace the encrypted message with the decrypted message
+                decryptedData.push([decryptedItem, date, doctorAddress, doctorName]);
+            }
+            document.getElementById("vaccinesData").innerText = JSON.stringify(decryptedData, null, 2);
+            generateQRCode(decryptedData,patientAddress);
+        } catch (error) {
+            console.error("Error decrypting data:", error);
+        }
+    } else {
+        alert("Please get the encrypted data first");
+    }
+}
+
+async function generateQRCode(decryptedData,patientAddress) {
+    const qrData = patientAddress + '-----' + JSON.stringify(decryptedData) + '-----' + randomNumber;
+    const qrCodeURL = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrData)}`;
+    console.log(qrData)
+    const qrCodeImage = document.createElement('img');
+    qrCodeImage.src = qrCodeURL;
+    qrCodeImage.style.marginTop = '16px';
+    document.body.appendChild(qrCodeImage);
+}
+
+    </script>
+</body>
+</html>
+

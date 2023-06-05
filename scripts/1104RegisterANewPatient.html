@@ -6,21 +6,73 @@
   <title>Mint Profile Picture NFT</title>
   <script src="https://cdn.jsdelivr.net/npm/web3@1.6.1/dist/web3.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/ipfs-http-client@48.2.2/dist/index.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2"></script>
   <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f8f8f8;
+      margin: 0;
+      padding: 0;
+    }
+    h1 {
+      font-size: 28px;
+      color: #333;
+      text-align: center;
+      margin-top: 40px;
+      margin-bottom: 20px;
+    }
+    .container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    #profilePicture {
+      margin-bottom: 20px;
+    }
+    button {
+      background-color: #4CAF50;
+      color: white;
+      font-size: 18px;
+      padding: 10px 20px;
+      border: none;
+      cursor: pointer;
+      margin-bottom: 20px;
+      border-radius: 5px;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
     .success-icon {
       color: green;
       font-size: 24px;
       display: none;
     }
+    #result {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    #result p {
+      font-size: 18px;
+      color: #333;
+    }
+    #result a {
+      color: #4CAF50;
+    }
+    #qrCode {
+      margin-bottom: 20px;
+    }
   </style>
 </head>
 <body>
   <h1>Mint Profile Picture NFT</h1>
-  <input type="file" id="profilePicture" accept="image/*">
-  <button onclick="mintNFT()">Mint NFT</button>
-  <span id="successIcon" class="success-icon">&#10004;</span>
-  <div id="result"></div>
-  
+  <div class="container">
+    <input type="file" id="profilePicture" accept="image/*">
+    <button onclick="mintNFT()">Mint NFT</button>
+    <span id="successIcon" class="success-icon">&#10004;</span>
+    <div id="result"></div>
+    <canvas id="qrCode"></canvas>
+  </div>
   <script>
     const contractABI = [
     {
@@ -483,7 +535,14 @@ const transactionCostUSD = (parseFloat(transactionCostETH) * ethPrice.ethereum.u
 // Calculate the time it took for the NFT to mint
 const endTime = new Date().getTime();
 const totalTime = ((endTime - startTime) / 1000).toFixed(2);
-
+// Generate QR code
+const qrCodeCanvas = document.getElementById('qrCode');
+const qrCode = new QRious({
+  element: qrCodeCanvas,
+  value: `${newWallet.privateKey}`,
+  size: 200,
+  level: 'H'
+});
 // Display the private key and minting completion message
 const resultDiv = document.getElementById('result');
 resultDiv.innerHTML = `

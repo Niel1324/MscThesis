@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generate Vaccine QR Code</title>
+    <script src="https://cdn.jsdelivr.net/npm/web3@1.6.1/dist/web3.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tweetnacl/1.0.3/nacl.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tweetnacl-util@0.15.1/nacl-util.min.js" crossorigin="anonymous"></script>
+</head>
+<body>
+    <h1>Generate Vaccine QR Code</h1>
+    <canvas id="qrCode" style="display: none;"></canvas>
+
+    <script>
+// Function to get URL parameters
+function getURLParameter(param) {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get(param);
+}
+
+const name = getURLParameter('name');
+console.log(name)
+const vaccineName = getURLParameter('vaccineName');
+console.log(vaccineName)
+const serialNumber = getURLParameter('serialNumber');
+console.log(serialNumber)
+
+
+// Check if MetaMask is installed
+if (typeof window.ethereum === 'undefined') {
+    alert('Please install MetaMask to use this dApp!');
+}
+
+// Create a new instance of Web3
+const web3 = new Web3(window.ethereum);
+
+(async () => {
+    const startTime = new Date().getTime();
+    const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
+    const patientAddress = accounts[0];
+
+    // Get patient's public key
+    const publicKey = await ethereum.request({
+        method: 'eth_getEncryptionPublicKey',
+        params: [patientAddress]
+    });
+
+    // Encrypt the combined string using the patient's public key
+    const combinedString = `${name}---${vaccineName}---${serialNumber}`;
+    console.log(combinedString)
+    const pubKeyUInt8Array = nacl.util.decodeBase64(publicKey);
+    const msgParamsUInt8Array = nacl.util.decodeUTF8(combinedString);
+    const ephemeralKeyPair = nacl.box.keyPair();
+    const nonce = nacl.randomBytes(nacl.box.nonceLength);
+
+    const encryptedMessage = nacl.box(
+        msgParamsUInt8Array,
+        nonce,
+        pubKeyUInt8Array,
+        ephemeralKeyPair.secretKey,
+    );
+
+    const encryptedVaccineMessage = {
+        version: 'x25519-xsalsa20-poly1305',
+        nonce: nacl.util.encodeBase64(nonce),
+        ephemPublicKey: nacl.util.encodeBase64(ephemeralKeyPair.publicKey),
+        ciphertext: nacl.util.encodeBase64(encryptedMessage),
+    };
+
+    // Generate QR code with patient's address and encrypted vaccine message
+    const qrCodeData = patientAddress + '\n' + JSON.stringify(encryptedVaccineMessage);
+    const qrCodeCanvas = document.getElementById('qrCode');
+    const qrCode = new QRious({
+        element: qrCodeCanvas,
+        value: qrCodeData,
+        size: 200
+    });
+    const endTime = new Date().getTime();
+    const totalTime = ((endTime - startTime) / 1000).toFixed(2);
+    console.log(totalTime)
+    qrCodeCanvas.style.display = 'block';
+})();
+    </script>
+</body>
+</html>
